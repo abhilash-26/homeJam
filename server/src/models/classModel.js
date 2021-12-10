@@ -5,12 +5,10 @@ const schema = mongoose.Schema({
   instructorId: {
     type: mongoose.Types.ObjectId,
     ref: "userSchema",
-    require: true,
+    required: true,
   },
   courseCharge: Number,
   courseDuration: String,
-  studentsEnrolled: [
-    { type: mongoose.Types.ObjectId, ref: "userSchema", require: true },
-  ],
+  studentsEnrolled: [{ type: mongoose.Types.ObjectId, ref: "userSchema" }],
 });
 module.exports = mongoose.model("courseSchema", schema, "courseSchema");
