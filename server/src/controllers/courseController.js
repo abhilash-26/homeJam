@@ -1,38 +1,5 @@
 const courseSchema = require("../models/classModel");
-
-//To get all the courses and the corosponding instructors
-
-const viewAllCourse = async (req, res) => {
-  try {
-    let courses = [];
-
-    const { userId } = req.body;
-    const result = await courseSchema
-      .find({
-        studentsEnrolled: userId,
-      })
-      .populate(instructorId);
-    console.log(result);
-
-    courses = result.map((item) => {
-      return {
-        course: item.title,
-        instructor: item.instructorName,
-      };
-    });
-    res.send({
-      status: 0,
-      msg: "The courses along with the corrosponding instructors are ",
-      data: courses,
-    });
-  } catch (error) {
-    res.send({
-      status: 1,
-      msg: error,
-      data: null,
-    });
-  }
-};
+const userSchema = require("../models/userModel");
 
 const createCourse = async (req, res) => {
   try {
@@ -92,4 +59,89 @@ const removeCourse = async (req, res) => {
   }
 };
 
-module.exports = { viewAllCourse, createCourse, removeCourse };
+const editCourse = async (req, res) => {
+  try {
+    const { courseId, title, courseDuration, courseCharge } = req.body;
+    await courseSchema.findByIdAndUpdate(courseId, {
+      $set: {
+        title: title,
+        courseDuration: courseDuration,
+        courseCharge: courseCharge,
+      },
+    });
+    res.send({
+      status: 0,
+      msg: "Course updated sucessfully",
+    });
+  } catch (error) {
+    res.send({
+      status: 1,
+      msg: error,
+    });
+  }
+};
+
+const addStudentToCourse = async (req, res) => {
+  try {
+    const { courseId, studentId } = req.body;
+    const student = await userSchema.findById(studentId);
+    if (student == "") {
+      res.send("No student with the given user id found");
+    } else {
+      const result = await courseSchema.findById(courseId);
+      const students = result.studentsEnrolled;
+      if (students.includes(studentId)) {
+        res.send("student already registered");
+      } else {
+        students.push(studentId);
+        await courseSchema.findByIdAndUpdate(courseId, {
+          $set: {
+            studentsEnrolled: students,
+          },
+        });
+        res.send("Student added succesfully");
+      }
+    }
+  } catch (error) {
+    res.send(error.message);
+  }
+};
+
+const removeStudentFromCourse = async (req, res) => {
+  try {
+    const { courseId, studentId } = req.body;
+    const result = await courseSchema.findById(courseId);
+    const students = result.studentsEnrolled;
+    if (students.includes(studentId)) {
+      const updated = students.filter((item) => item != studentId);
+      await courseSchema.findByIdAndUpdate(courseId, {
+        $set: {
+          studentsEnrolled: updated,
+        },
+      });
+      res.send({
+        status: 0,
+        msg: "Students updated sucessfully",
+      });
+    } else {
+      res.send({
+        status: 1,
+        msg: "student not found in the course",
+      });
+    }
+  } catch (error) {
+    res.send({
+      status: 1,
+      msg: error,
+      data: null,
+    });
+  }
+};
+
+module.exports = {
+  createCourse,
+  removeCourse,
+  editCourse,
+  addStudentToCourse,
+  removeStudentFromCourse,
+};
